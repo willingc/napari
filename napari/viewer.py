@@ -1,9 +1,11 @@
+import logging
 import typing
 from pathlib import Path
 from weakref import WeakSet
 
 import magicgui as mgui
 import numpy as np
+import structlog
 
 from napari.components.viewer_model import ViewerModel
 from napari.utils import _magicgui
@@ -12,6 +14,35 @@ from napari.utils.events.event_utils import disconnect_events
 if typing.TYPE_CHECKING:
     # helpful for IDE support
     from napari._qt.qt_main_window import Window
+
+
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.StackInfoRenderer(),
+        structlog.dev.set_exc_info,
+        structlog.processors.TimeStamper(fmt='iso'),
+        structlog.processors.CallsiteParameterAdder(
+            {
+                structlog.processors.CallsiteParameter.FILENAME,
+                structlog.processors.CallsiteParameter.FUNC_NAME,
+                structlog.processors.CallsiteParameter.LINENO,
+                structlog.processors.CallsiteParameter.PROCESS,
+                structlog.processors.CallsiteParameter.THREAD,
+            }
+        ),
+        structlog.dev.ConsoleRenderer(),
+    ],
+    # set the logging level to display in the console. NOTSET is all levels.
+    wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
+    context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(),
+    cache_logger_on_first_use=False,
+)
+
+
+log = structlog.getLogger()
 
 
 @mgui.register_type(bind=_magicgui.proxy_viewer_ancestor)
@@ -54,6 +85,7 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
             **kwargs,
         )
+        log.debug('Viewer created', title=title)
         # we delay initialization of plugin system to the first instantiation
         # of a viewer... rather than just on import of plugins module
         from napari.plugins import _initialize_plugins
@@ -63,9 +95,12 @@ class Viewer(ViewerModel):
         from napari.window import Window
 
         _initialize_plugins()
+        log.debug('Initialize plugins')
 
         self._window = Window(self, show=show)
+        log.debug('Show window')
         self._instances.add(self)
+        log.debug('Viewer added to instances', title=self.title)
 
     # Expose private window publicly. This is needed to keep window off pydantic model
     @property
@@ -238,6 +273,7 @@ class Viewer(ViewerModel):
     def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
         self.window.show(block=block)
+        log.debug('Viewer shown', title=self.title)
 
     def close(self):
         """Close the viewer window."""
@@ -250,8 +286,10 @@ class Viewer(ViewerModel):
         self.layers.clear()
         # Close the main window
         self.window.close()
+        log.debug('Viewer closed', title=self.title)
 
         self._instances.discard(self)
+        log.debug('Viewer removed from instances', title=self.title)
 
     @classmethod
     def close_all(cls) -> int:
