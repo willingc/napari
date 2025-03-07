@@ -165,8 +165,16 @@ def get_qapp(
     set_values = {k for k, v in locals().items() if v}
     kwargs = locals() if set_values else _defaults
     global _app_ref
+    log.debug('setting global app ref', app_ref=_app_ref)
 
-    app = QApplication.instance()
+    if QApplication.instance() is None:
+        app = QApplication(['napari-app'])
+        app.setApplicationName('napariiiiiii')
+        log.debug('creat app instance since there was none')
+    else:
+        app = QApplication.instance()
+        log.debug('app instance already created')
+
     if app:
         set_values.discard('ipy_interactive')
         if set_values:
