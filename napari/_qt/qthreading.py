@@ -7,10 +7,13 @@ from typing import (
     TypeVar,
 )
 
+import structlog
 from superqt.utils import _qthreading
 
 from napari.utils.progress import progress
 from napari.utils.translations import trans
+
+log = structlog.get_logger()
 
 __all__ = [
     'FunctionWorker',
@@ -21,6 +24,9 @@ __all__ = [
 ]
 
 wait_for_workers_to_quit = _qthreading.WorkerBase.await_workers
+log.debug(
+    'Wait for workers to quit for a clean state', func=wait_for_workers_to_quit
+)
 
 
 class _NotifyingMixin:
@@ -181,11 +187,13 @@ def create_worker(
 
         worker.pbar = pbar
 
+    log.debug('Create a worker', worker=worker)
     if _start_thread is None:
         _start_thread = _connect is not None
 
     if _start_thread:
         worker.start()
+        log.debug('Start the worker', worker=worker)
     return worker
 
 
@@ -299,6 +307,7 @@ def thread_worker(
             kwargs['_ignore_errors'] = kwargs.get(
                 '_ignore_errors', ignore_errors
             )
+            log.debug('Create a thread worker to run a function')
             return create_worker(
                 func,
                 *args,
@@ -362,4 +371,6 @@ def register_threadworker_processors():
             t,
             return_callback=partial(_mgui.add_worker_data, _from_tuple=False),
         )
+        log.debug('Register worker type with the app', worker_type=t, app=app)
         app.injection_store.register(processors={t: _add_worker_data})
+    log.debug('Register thread worker processors', app=app)

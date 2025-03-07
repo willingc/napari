@@ -16,7 +16,10 @@ from textwrap import wrap
 from typing import Any
 
 from napari.errors import ReaderPluginError
+from napari.utils.structured_logger import setup_structured_logger
 from napari.utils.translations import trans
+
+log = setup_structured_logger()
 
 
 class InfoAction(argparse.Action):
@@ -585,4 +588,5 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    app = main()
+    sys.exit(app)

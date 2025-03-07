@@ -23,6 +23,7 @@ from typing import (
 from weakref import WeakValueDictionary
 
 import numpy as np
+import structlog
 from qtpy.QtCore import (
     QEvent,
     QEventLoop,
@@ -104,6 +105,7 @@ if TYPE_CHECKING:
 
 _sentinel = object()
 
+log = structlog.getLogger()
 
 MenuStr = Literal[
     'file_menu',

@@ -11,6 +11,7 @@ from napari.utils.notebook_display import (
     nbscreenshot,
 )
 from napari.utils.progress import cancelable_progress, progrange, progress
+from napari.utils.structlog_qt_handler import QtStructLogHandler
 
 __all__ = (
     'NUMPY_VERSION_IS_THREADSAFE',
@@ -18,6 +19,7 @@ __all__ = (
     'CyclicLabelColormap',
     'DirectLabelColormap',
     'NotebookScreenshot',
+    'QtStructLogHandler',
     'cancelable_progress',
     'citation_text',
     'nbscreenshot',

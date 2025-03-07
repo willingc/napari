@@ -10,8 +10,12 @@ from datetime import datetime
 from enum import auto
 from types import TracebackType
 
+import structlog
+
 from napari.utils.events import Event, EventEmitter
 from napari.utils.misc import StringEnum
+
+log = structlog.getLogger()
 
 name2num = {
     'error': 40,

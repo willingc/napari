@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
 from warnings import warn
 
+import structlog
 from qtpy import PYQT5, PYSIDE2
 from qtpy.QtCore import QDir, Qt
 from qtpy.QtGui import QIcon
@@ -32,6 +33,8 @@ from napari.utils.translations import trans
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
+
+log = structlog.getLogger()
 
 NAPARI_ICON_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'resources', 'logo.png'
@@ -264,8 +267,11 @@ def get_qapp(
 
         app.focusChanged.connect(_focus_changed)
 
-    _app_ref = app  # prevent garbage collection
+        # Log some messages with structlog directly
+        log.info('Application initialized with structlog', version='1.0.0')
 
+    _app_ref = app  # prevent garbage collection
+    log.debug('Created QApplication and stored reference to prevent GC')
     # Add the dispatcher attribute to the application to be able to dispatch
     # notifications coming from threads
 

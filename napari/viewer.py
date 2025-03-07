@@ -1,4 +1,3 @@
-import logging
 import typing
 from pathlib import Path
 from weakref import WeakSet
@@ -14,32 +13,6 @@ from napari.utils.events.event_utils import disconnect_events
 if typing.TYPE_CHECKING:
     # helpful for IDE support
     from napari._qt.qt_main_window import Window
-
-
-structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.StackInfoRenderer(),
-        structlog.dev.set_exc_info,
-        structlog.processors.TimeStamper(fmt='iso'),
-        structlog.processors.CallsiteParameterAdder(
-            {
-                structlog.processors.CallsiteParameter.FILENAME,
-                structlog.processors.CallsiteParameter.FUNC_NAME,
-                structlog.processors.CallsiteParameter.LINENO,
-                structlog.processors.CallsiteParameter.PROCESS,
-                structlog.processors.CallsiteParameter.THREAD,
-            }
-        ),
-        structlog.dev.ConsoleRenderer(),
-    ],
-    # set the logging level to display in the console. NOTSET is all levels.
-    wrapper_class=structlog.make_filtering_bound_logger(logging.NOTSET),
-    context_class=dict,
-    logger_factory=structlog.PrintLoggerFactory(),
-    cache_logger_on_first_use=False,
-)
 
 
 log = structlog.getLogger()
