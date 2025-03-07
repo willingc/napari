@@ -43,6 +43,7 @@ NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
 
 def set_app_id(app_id):
+    log.debug('setting app_id', app_id=app_id)
     if os.name == 'nt' and app_id and not getattr(sys, 'frozen', False):
         import ctypes
 
@@ -158,6 +159,7 @@ def get_qapp(
     is set.
 
     """
+    log.debug('starting get_qapp')
     # napari defaults are all-or nothing.  If any of the keywords are used
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
@@ -280,14 +282,18 @@ def get_qapp(
 
 def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
+    log.debug('quit_app called')
     for v in list(Viewer._instances):
         v.close()
+    log.debug('close all windows')
     QApplication.closeAllWindows()
+    log.debug('windows should be closed')
     # if we started the application then the app will be named 'napari'.
     if (
         QApplication.applicationName() == 'napari'
         and not _ipython_has_eventloop()
     ):
+        log.debug('Call QApplication.quit()')
         QApplication.quit()
 
     # otherwise, something else created the QApp before us (such as
@@ -297,6 +303,7 @@ def quit_app():
     # quit just close all the windows (and clear our app icon).
     else:
         QApplication.setWindowIcon(QIcon())
+        log.debug('set window icon instead of close')
 
     if perf.perf_config is not None:
         # Write trace file before exit, if we were writing one.
