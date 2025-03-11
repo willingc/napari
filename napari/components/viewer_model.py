@@ -578,6 +578,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def _calc_status_from_cursor(
         self,
     ) -> tuple[str | Dict, str] | None:
+        separator = '    '
+
         if not self.mouse_over_canvas:
             return None
         coord2val: dict[str, list[str]] = {}
@@ -601,8 +603,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 dims_displayed=list(self.dims.displayed),
                 world=True,
             )
-            emphasis = ' ### ' if layer is active else ''
-            coord_str = f'{status["coords"]} >>> '
+            emphasis = separator if layer is active else ' '
+            coord_str = f'{status["coords"]}{separator}'
             if status['value'] != '':
                 if coord_str not in coord2val:
                     coord2val[coord_str] = []
@@ -616,9 +618,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 key = next(iter(coord2val))  # choose arbitrary coordinate
                 coord2val = {key: values}
             status_strs = [
-                key + ' // '.join(values) for key, values in coord2val.items()
+                key + separator.join(values)
+                for key, values in coord2val.items()
             ]
-            status_str = ' ||| '.join(status_strs)
+            status_str = separator.join(status_strs)
         elif coord_str and not self.grid.enabled:
             status_str = coord_str + '[empty]'
         elif self.grid.enabled:
