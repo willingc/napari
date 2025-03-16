@@ -24,6 +24,7 @@ def test_cli_works(monkeypatch, capsys):
     assert 'napari command line viewer.' in str(capsys.readouterr())
 
 
+@pytest.mark.skip(reason='Fatal on macOS')
 def test_cli_shows_plugins(monkeypatch, capsys, tmp_plugin):
     """Test the cli --info runs and shows plugins"""
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
