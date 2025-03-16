@@ -380,7 +380,31 @@ console_output_style = "count"
 minversion = "8"
 # log_cli_level = "INFO"
 xfail_strict = true
-testpaths = ["napari", "napari_builtins"]
+testpaths = [
+    # -- Block 1 Stable test paths
+    # 42sec 2683 passed 4 skipped 44 warnings
+    # 42sec 2683 passed 4 skipped 44 warnings
+    "napari/layers",
+    "napari/settings",
+    "napari/utils",
+    # 1sec 7 passed 2 warnings
+    "napari/_app_model",
+    # 3sec 110 passed 1 skipped 2 warnings
+    "napari/plugins",
+    # 4sec 83 passed 9 warnings
+    "napari_builtins/_tests",
+    # -- Block 2 Fastish tests
+    # 23s 163 passed 18 skipped 11 warnings
+    #"napari/_vispy",
+    # -- Block 3 slow and warnings
+    # 1m28s 307 passed 43 skipped 1 xfailed 20 warnings
+    #"napari/_tests",
+    # 1m57s 669 passed 62 skipped 118 warnings
+    #"napari/_qt",
+    #"napari",
+    # fatal errors
+    #"napari/components",
+]
 
 
 # NOTE: only put things that will never change in here.
