@@ -16,4 +16,4 @@ dependencies:
   - pip
   - pip:
     - jupyter-remote-desktop-proxy
-    - napari[all]>=0.6.0a0"
+    - napari[all]>=0.6.0a0
