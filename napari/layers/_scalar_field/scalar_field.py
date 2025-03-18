@@ -614,7 +614,11 @@ class ScalarFieldBase(Layer, ABC):
             The first non-background value encountered along the ray. If none
             was encountered or the viewer is in 2D mode, returns None.
         """
-        if start_point is None or end_point is None:
+        if (
+            start_point is None
+            or end_point is None
+            or len(dims_displayed) == 2
+        ):
             return None
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
