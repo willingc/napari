@@ -1,0 +1,58 @@
+name: Test Qt Viewer
+
+on:
+  workflow_dispatch:
+
+env:
+  COLUMNS: 120
+
+jobs:
+  test_qt_viewer:
+    name: test_qt_viewer (${{ matrix.os }}, ${{ matrix.qt_backend }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        qt_backend: [pyqt5, pyqt6, pyside6]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1-mesa libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 x11-utils
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+
+      - name: Setup headless display (Linux)
+        if: runner.os == 'Linux'
+        uses: pyvista/setup-headless-display-action@v2
+
+      - name: Run test_qt_viewer
+        run: |
+          tox -e py313-${{ runner.os == 'Linux' && 'linux' || runner.os == 'Windows' && 'win' || 'macos' }}-${{ matrix.qt_backend }} -- src/napari/_qt/_tests/test_qt_viewer.py -v
+        env:
+          PLATFORM: ${{ runner.os == 'Linux' && 'linux' || runner.os == 'Windows' && 'win' || 'macos' }}
+
+      - name: Run test_async_slicing
+        run: |
+          tox -e py313-${{ runner.os == 'Linux' && 'linux' || runner.os == 'Windows' && 'win' || 'macos' }}-${{ matrix.qt_backend }} -- src/napari/_qt/_tests/test_async_slicing.py -v
+        env:
+          PLATFORM: ${{ runner.os == 'Linux' && 'linux' || runner.os == 'Windows' && 'win' || 'macos' }}
