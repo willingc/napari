@@ -2,6 +2,7 @@ import csv
 import itertools
 import os
 import re
+import urllib.request
 from collections.abc import Sequence
 from contextlib import contextmanager, suppress
 from glob import glob
@@ -11,7 +12,6 @@ from urllib.parse import urlparse
 
 import imageio.v3 as iio
 import numpy as np
-import requests
 from dask import delayed
 
 from napari.utils.misc import abspath_or_url
@@ -693,6 +693,21 @@ def _add_dropped_scripts_to_console(
         console.push(variables)
 
 
+def _fetch_text(url: str) -> str:
+    """Fetch URL content as text using the stdlib.
+
+    This intentionally lets network/HTTP exceptions propagate so callers can
+    surface errors consistently (similar to `requests.get(...).raise_for_status()`).
+    """
+    request = urllib.request.Request(url, headers={'User-Agent': 'napari'})
+    with urllib.request.urlopen(request) as response:
+        charset = (
+            response.headers.get_content_charset() or 'utf-8'
+        )  # e.g. "utf-8" or "iso-8859-1"
+        # `requests.Response.text` uses a permissive decode strategy.
+        return response.read().decode(charset, errors='replace')
+
+
 def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     """Load and execute Python code from a file.
 
@@ -704,9 +719,7 @@ def load_and_execute_python_code(script_path: str) -> list['LayerData']:
     if _is_url(script_path):
         # download the script from the URL
 
-        response = requests.get(_git_provider_url_to_raw_url(script_path))
-        response.raise_for_status()
-        code = response.text
+        code = _fetch_text(_git_provider_url_to_raw_url(script_path))
     else:
         code = Path(script_path).read_text()
     execute_python_code(code, script_path)

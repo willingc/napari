@@ -18,6 +18,7 @@ from napari_builtins.io._read import (
     _guess_layer_type_from_column_names,
     _guess_zarr_path,
     csv_to_layer_data,
+    load_and_execute_python_code,
     magic_imread,
     read_csv,
     read_zarr_dataset,
@@ -432,3 +433,65 @@ def test_zarr_multiple_groups_reads_first(tmp_path, monkeypatch):
     call_args, _ = mock_show_info.call_args
     assert 'Opening group "0"' in call_args[0]
     assert 'Other groups: 1' in call_args[0]
+
+
+def test_load_and_execute_python_code_url(monkeypatch):
+    import urllib.request
+
+    import napari_builtins.io._read as read_mod
+
+    called = {}
+
+    class FakeHeaders:
+        def get_content_charset(self):
+            return 'utf-8'
+
+    class FakeResponse:
+        headers = FakeHeaders()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return b"print('hello')"
+
+    def fake_urlopen(request):
+        called['url'] = request.full_url
+        return FakeResponse()
+
+    def fake_execute(code, script_path):
+        called['code'] = code
+        called['script_path'] = script_path
+
+    monkeypatch.setattr(urllib.request, 'urlopen', fake_urlopen)
+    monkeypatch.setattr(read_mod, 'execute_python_code', fake_execute)
+
+    out = load_and_execute_python_code('https://example.com/script.py')
+    assert out == [(None,)]
+    assert called['url'] == 'https://example.com/script.py'
+    assert called['code'] == "print('hello')"
+    assert called['script_path'] == 'https://example.com/script.py'
+
+
+def test_load_and_execute_python_code_url_http_error(monkeypatch):
+    import urllib.request
+    from urllib.error import HTTPError
+
+    err = HTTPError(
+        url='https://example.com/script.py',
+        code=404,
+        msg='Not Found',
+        hdrs=None,
+        fp=None,
+    )
+
+    def fake_urlopen(request):
+        raise err
+
+    monkeypatch.setattr(urllib.request, 'urlopen', fake_urlopen)
+
+    with pytest.raises(HTTPError):
+        load_and_execute_python_code('https://example.com/script.py')
