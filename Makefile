@@ -1,4 +1,4 @@
-.PHONY: typestubs pre watch dist settings-schema
+.PHONY: typestubs typecheck-pyrefly pre watch dist settings-schema
 
 typestubs:
 	python -m napari.utils.stubgen
@@ -8,6 +8,9 @@ typestubs:
 # https://mypy.readthedocs.io/en/stable/mypy_daemon.html
 typecheck:
 	tox -e mypy
+
+typecheck-pyrefly:
+	tox -e pyrefly
 
 check-manifest:
 	pip install -U check-manifest
