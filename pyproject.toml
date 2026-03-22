@@ -996,8 +996,12 @@ ignore_imports = [
 # Src layout: resolve `napari` imports from `src/` (see also [tool.setuptools.packages.find]).
 search-path = ["src"]
 project-includes = ["src/napari/**/*.py"]
-# Same file as mypy exclude; triggers an internal error in some checkers.
-project-excludes = ["**/src/napari/utils/events/_tests/test_evented_model.py"]
+project-excludes = [
+    # Third-party / forked code — type-checked upstream or not maintained here.
+    "**/vendored/**",
+    # Same file as mypy exclude; triggers an internal error in some checkers.
+    "**/src/napari/utils/events/_tests/test_evented_model.py",
+]
 ignore-missing-imports = ["*"]
 # Align with supported interpreters (requires-python >=3.10); matches typing CI (3.12).
 python-version = "3.12"
