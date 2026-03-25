@@ -91,11 +91,13 @@ jobs:
             backend: pyqt5
             coverage: no_cov
             min_req: ""
+            toxenv: py310-linux-pyqt5-no_cov
           - python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: no_cov
             min_req: ""
+            toxenv: py314-linux-pyqt6-no_cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -103,6 +105,7 @@ jobs:
       coverage: ${{ matrix.coverage }}
       min_req: ${{ matrix.MIN_REQ }}
       artifacts_suffix: "initial"
+      toxenv: ${{ matrix.toxenv }}
 
   test:
     # platform + backend keeps job names unique (e.g. two ubuntu-latest rows for pyqt5 vs pyqt6).
@@ -117,57 +120,78 @@ jobs:
         backend: [ pyqt5, pyqt6 ]
         coverage: [ cov ]
         include:
-          # Windows py310
+          # ubuntu-latest py313 pyqt5 + pyqt6 (explicit tox env names; see tox.ini envlist)
+          - python: "3.13"
+            platform: ubuntu-latest
+            backend: pyqt5
+            coverage: cov
+            toxenv: py313-linux-pyqt5-cov
+          - python: "3.13"
+            platform: ubuntu-latest
+            backend: pyqt6
+            coverage: cov
+            toxenv: py313-linux-pyqt6-cov
+          # Windows
           - python: "3.11"
             platform: windows-2022
             backend: pyqt5
             coverage: no_cov
+            toxenv: py311-windows-pyqt5-no_cov
           - python: "3.13"
             platform: windows-2022
             backend: pyqt6
             coverage: cov
+            toxenv: py313-windows-pyqt6-cov
           - python: "3.13"
             platform: macos-15-intel
             backend: pyqt5_no_numba
             coverage: no_cov
             timeout-minutes: 60
+            toxenv: py313-macos-pyqt5_no_numba-no_cov
           - python: "3.13"
             platform: macos-latest
             backend: pyqt6
             coverage: no_cov
             timeout-minutes: 60
+            toxenv: py313-macos-pyqt6-no_cov
           # minimum specified requirements
           - python: "3.10"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
+            toxenv: py310-linux-pyqt5-cov
           - python: "3.12"
             platform: ubuntu-22.04
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
+            toxenv: py312-linux-pyqt6-cov
           # test without any Qt backends
           - python: "3.11"
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
+            toxenv: py311-linux-headless-no_cov
           # test with torch
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
+            toxenv: py313-linux-pyqt6-cov
           # test with no numba
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
+            toxenv: py313-linux-pyqt6_no_numba-cov
           # pyside6 test
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyside6
             coverage: cov
+            toxenv: py313-linux-pyside6-cov
     with:
       python_version: ${{ matrix.python }}
       platform: ${{ matrix.platform }}
@@ -176,6 +200,7 @@ jobs:
       coverage: ${{ matrix.coverage }}
       tox_extras: ${{ matrix.tox_extras }}
       timeout: ${{ matrix.timeout-minutes || 40 }}
+      toxenv: ${{ matrix.toxenv }}
 
 
   test_pip_install:

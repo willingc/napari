@@ -48,7 +48,6 @@ jobs:
     name: ${{ inputs.platform }} py ${{ inputs.python_version }} ${{ inputs.toxenv || inputs.qt_backend }} ${{ inputs.MIN_REQ && 'min_req' }} ${{ inputs.coverage }}
     runs-on: ${{ inputs.platform }}
     env:
-      TOXENV: ${{ inputs.toxenv }}
       NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ inputs.MIN_REQ || 1 }}
       PYVISTA_OFF_SCREEN: True
       MIN_REQ: ${{ inputs.min_req }}
@@ -112,21 +111,15 @@ jobs:
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 
-      # tox and tox-gh-actions will take care of the "actual" installation
-      # of python dependencies into a virtualenv.  see tox.ini for more
+      # tox installs dependencies into a virtualenv (see tox.ini).
+      # When inputs.toxenv is set, we run `tox run -e <env>` explicitly; otherwise
+      # tox-gh-actions maps BACKEND / COVERAGE / RUNNER_OS into a tox env name.
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions tox-min-req tox-uv
         env:
           PIP_CONSTRAINT: ""
-
-      # here we pass off control of environment creation and running of tests to tox
-      # tox-gh-actions, installed above, helps to convert environment variables into
-      # tox "factors" ... limiting the scope of what gets tested on each platform
-      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
-      # `tox -e py38-linux-pyqt,py38-linux-pyside`
-      # see tox.ini for more
 
       - name: Split qt backend
         # This is a hack to split the qt_backend variable into four parts
@@ -152,7 +145,11 @@ jobs:
         run: |
           echo ${{ env.MAIN }}
           tox --version
-          python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
+          if [ -n "${{ inputs.toxenv }}" ]; then
+            python -m tox run -e "${{ inputs.toxenv }}" --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          else
+            python -m tox run --installpkg "${WHEEL_PATH}" -- --basetemp=.pytest_tmp
+          fi
           rm -r .tox
         env:
           BACKEND: ${{ env.MAIN }}
@@ -160,7 +157,7 @@ jobs:
 
       - name: Test with tox second
         timeout-minutes: ${{ inputs.timeout }}
-        if : ${{ env.SECOND != 'none' }}
+        if: ${{ inputs.toxenv == '' && env.SECOND != 'none' }}
         shell: bash
         run: |
           python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
@@ -171,7 +168,7 @@ jobs:
 
       - name: Test with tox third
         timeout-minutes: ${{ inputs.timeout }}
-        if : ${{ env.THIRD != 'none' }}
+        if: ${{ inputs.toxenv == '' && env.THIRD != 'none' }}
         shell: bash
         run: |
           python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp
@@ -182,7 +179,7 @@ jobs:
 
       - name: Test with tox fourth
         timeout-minutes: ${{ inputs.timeout }}
-        if: ${{ env.FOURTH != 'none' }}
+        if: ${{ inputs.toxenv == '' && env.FOURTH != 'none' }}
         shell: bash
         run: |
           python -m tox run --installpkg ${{ env.WHEEL_PATH }} -- --basetemp=.pytest_tmp

@@ -53,26 +53,64 @@ jobs:
         python: ["3.10", "3.11", "3.12", "3.13"]
         backend: [pyqt5]
         include:
+          # Explicit tox env per cartesian cell (see tox.ini envlist)
+          - platform: ubuntu-latest
+            python: "3.10"
+            backend: pyqt5
+            toxenv: py310-linux-pyqt5-cov
+          - platform: ubuntu-latest
+            python: "3.11"
+            backend: pyqt5
+            toxenv: py311-linux-pyqt5-cov
+          - platform: ubuntu-latest
+            python: "3.12"
+            backend: pyqt5
+            toxenv: py312-linux-pyqt5-cov
+          - platform: ubuntu-latest
+            python: "3.13"
+            backend: pyqt5
+            toxenv: py313-linux-pyqt5-cov
+          - platform: windows-2022
+            python: "3.10"
+            backend: pyqt5
+            toxenv: py310-windows-pyqt5-cov
+          - platform: windows-2022
+            python: "3.11"
+            backend: pyqt5
+            toxenv: py311-windows-pyqt5-cov
+          - platform: windows-2022
+            python: "3.12"
+            backend: pyqt5
+            toxenv: py312-windows-pyqt5-cov
+          - platform: windows-2022
+            python: "3.13"
+            backend: pyqt5
+            toxenv: py313-windows-pyqt5-cov
           - python: "3.11"
             platform: macos-latest
             backend: pyqt5
+            toxenv: py311-macos-pyqt5-cov
           # test with minimum specified requirements
           - python: "3.10"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
+            toxenv: py310-linux-pyqt5-cov
           # test without any Qt backends
           - python: "3.10"
             platform: ubuntu-22.04
             backend: headless
+            toxenv: py310-linux-headless-cov
           - python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
             tox_extras: "testing_extra"
+            toxenv: py313-linux-pyqt6-cov
           - python: "3.11"
             platform: ubuntu-latest
             backend: pyside6
             tox_extras: "testing_extra"
+            toxenv: py311-linux-pyside6-cov
 
     with:
       python_version: ${{ matrix.python }}
@@ -81,6 +119,7 @@ jobs:
       min_req: ${{ matrix.MIN_REQ }}
       coverage: cov
       tox_extras: ${{ matrix.tox_extras }}
+      toxenv: ${{ matrix.toxenv }}
 
   test_pip_install:
     name: pip install
