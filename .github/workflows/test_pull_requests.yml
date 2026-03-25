@@ -1,4 +1,22 @@
-# Our minimal suite of tests that run on each pull request
+# =============================================================================
+# CI overview — PR Test (this file)
+# -----------------------------------------------------------------------------
+# Triggers: pull_request to main or version branches (v*).
+#
+# What runs here: import lint, manifest check, localization syntax, wheel build,
+# tox smoke (test_initial), full tox matrix (test), pip-install smoke, examples,
+# coverage aggregation, and benchmark smoke. Matrix rows are labeled in each job
+# (see `test` / `test_initial`) so check names in GitHub match intent.
+#
+# Which checks block merging is set in repo branch protection, not in this file.
+#
+# After merge to main: `test_comprehensive.yml` runs a larger matrix on push to
+# main / v* and on tags; see that workflow and `.github/workflows/` for docs,
+# typing, translations, vendored deps, prereleases, etc.
+#
+# Manual runs: any workflow with `workflow_dispatch` (e.g. comprehensive tests);
+# some workflows also run only when certain paths change (read each file’s `on:`).
+# =============================================================================
 name: PR Test
 
 on:
