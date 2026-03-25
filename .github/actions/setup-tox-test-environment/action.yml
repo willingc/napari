@@ -1,0 +1,65 @@
+# Shared steps for reusable_run_tox_test.yml: runner prep before tox (not the tests themselves).
+name: Setup tox test environment
+description: Cache test data, wheel artifact, Python, headless display, and tox CLI dependencies
+
+inputs:
+  python-version:
+    description: Python version passed to actions/setup-python
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Cache pooch downloads
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+      with:
+        path: |
+          ${{ github.workspace }}/.cache/scikit-image
+          ${{ github.workspace }}/.cache/napari-*
+          ${{ github.workspace }}/.cache/pooch
+        key: pooch
+
+    - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+      with:
+        name: wheel
+        path: dist
+
+    - name: Set wheel path
+      run: echo "WHEEL_PATH=$(ls dist/*.whl)" >> "$GITHUB_ENV"
+      shell: bash
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+        cache-dependency-path: pyproject.toml
+
+    - name: Setup Graphviz
+      uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c # v2.0.2
+      continue-on-error: true
+
+    - name: Set Windows resolution
+      if: runner.os == 'Windows'
+      run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+      shell: powershell
+
+    - name: Setup headless display
+      uses: pyvista/setup-headless-display-action@7d84ae825e6d9297a8e99bdbbae20d1b919a0b19 # v4.2
+      with:
+        qt: true
+        wm: herbstluftwm
+
+    - name: Disable ptrace security restrictions
+      if: runner.os == 'Linux'
+      run: |
+        echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      shell: bash
+
+    - name: Install tox tooling
+      run: |
+        pip install --upgrade pip
+        pip install setuptools tox tox-gh-actions tox-min-req tox-uv
+      shell: bash
+      env:
+        PIP_CONSTRAINT: ""
