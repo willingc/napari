@@ -105,7 +105,8 @@ jobs:
       artifacts_suffix: "initial"
 
   test:
-    name: ${{ matrix.platform }}
+    # platform + backend keeps job names unique (e.g. two ubuntu-latest rows for pyqt5 vs pyqt6).
+    name: ${{ matrix.platform }} ${{ matrix.backend }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     strategy:
@@ -113,7 +114,7 @@ jobs:
       matrix:
         platform: [ ubuntu-latest ]
         python: [ "3.13" ]
-        backend: [ "pyqt5,pyqt6" ]
+        backend: [ pyqt5, pyqt6 ]
         coverage: [ cov ]
         include:
           # Windows py310
