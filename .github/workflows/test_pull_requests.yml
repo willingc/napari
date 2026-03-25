@@ -79,20 +79,22 @@ jobs:
     uses: ./.github/workflows/reusable_build_wheel.yml
 
   test_initial:
-    name: Initial test
+    name: ${{ matrix.label }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: build_wheel
     strategy:
       fail-fast: false
       matrix:
         include:
-          - python: "3.10"
+          - label: initial ubuntu py3.10 pyqt5
+            python: "3.10"
             platform: ubuntu-latest
             backend: pyqt5
             coverage: no_cov
             min_req: ""
             toxenv: py310-linux-pyqt5-no_cov
-          - python: "3.14"
+          - label: initial ubuntu py3.14 pyqt6
+            python: "3.14"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: no_cov
@@ -108,86 +110,94 @@ jobs:
       toxenv: ${{ matrix.toxenv }}
 
   test:
-    # platform + backend keeps job names unique (e.g. two ubuntu-latest rows for pyqt5 vs pyqt6).
-    name: ${{ matrix.platform }} ${{ matrix.backend }}
+    # Flat include-only matrix: each row is one tox run (no cartesian product).
+    # label is the GitHub check name; toxenv must match tox.ini envlist.
+    name: ${{ matrix.label }}
     uses: ./.github/workflows/reusable_run_tox_test.yml
     needs: test_initial
     strategy:
       fail-fast: false
       matrix:
-        platform: [ ubuntu-latest ]
-        python: [ "3.13" ]
-        backend: [ pyqt5, pyqt6 ]
-        coverage: [ cov ]
         include:
-          # ubuntu-latest py313 pyqt5 + pyqt6 (explicit tox env names; see tox.ini envlist)
-          - python: "3.13"
+          # --- Core: Ubuntu + Python 3.13 + PyQt5/PyQt6 (coverage) ---
+          - label: ubuntu py3.13 pyqt5 cov
+            python: "3.13"
             platform: ubuntu-latest
             backend: pyqt5
             coverage: cov
             toxenv: py313-linux-pyqt5-cov
-          - python: "3.13"
+          - label: ubuntu py3.13 pyqt6 cov
+            python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             toxenv: py313-linux-pyqt6-cov
-          # Windows
-          - python: "3.11"
+          # --- Windows ---
+          - label: windows py3.11 pyqt5
+            python: "3.11"
             platform: windows-2022
             backend: pyqt5
             coverage: no_cov
             toxenv: py311-windows-pyqt5-no_cov
-          - python: "3.13"
+          - label: windows py3.13 pyqt6 cov
+            python: "3.13"
             platform: windows-2022
             backend: pyqt6
             coverage: cov
             toxenv: py313-windows-pyqt6-cov
-          - python: "3.13"
+          # --- macOS ---
+          - label: macos intel py3.13 pyqt5_no_numba
+            python: "3.13"
             platform: macos-15-intel
             backend: pyqt5_no_numba
             coverage: no_cov
             timeout-minutes: 60
             toxenv: py313-macos-pyqt5_no_numba-no_cov
-          - python: "3.13"
+          - label: macos arm py3.13 pyqt6
+            python: "3.13"
             platform: macos-latest
             backend: pyqt6
             coverage: no_cov
             timeout-minutes: 60
             toxenv: py313-macos-pyqt6-no_cov
-          # minimum specified requirements
-          - python: "3.10"
+          # --- Min pinned deps (ubuntu-22.04) ---
+          - label: min-reqs ubuntu py3.10 pyqt5 cov
+            python: "3.10"
             platform: ubuntu-22.04
             backend: pyqt5
             MIN_REQ: 1
             coverage: cov
             toxenv: py310-linux-pyqt5-cov
-          - python: "3.12"
+          - label: min-reqs ubuntu py3.12 pyqt6 all_optional cov
+            python: "3.12"
             platform: ubuntu-22.04
             backend: pyqt6
             coverage: cov
             tox_extras: "all_optional"
             toxenv: py312-linux-pyqt6-cov
-          # test without any Qt backends
-          - python: "3.11"
+          # --- Headless (no Qt UI) ---
+          - label: headless ubuntu py3.11
+            python: "3.11"
             platform: ubuntu-22.04
             backend: headless
             coverage: no_cov
             toxenv: py311-linux-headless-no_cov
-          # test with torch
-          - python: "3.13"
+          # --- Optional stacks on top of core ubuntu pyqt6 ---
+          - label: ubuntu py3.13 pyqt6 +testing_extra cov
+            python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6
             coverage: cov
             tox_extras: "testing_extra"
             toxenv: py313-linux-pyqt6-cov
-          # test with no numba
-          - python: "3.13"
+          - label: ubuntu py3.13 pyqt6_no_numba cov
+            python: "3.13"
             platform: ubuntu-latest
             backend: pyqt6_no_numba
             coverage: cov
             toxenv: py313-linux-pyqt6_no_numba-cov
-          # pyside6 test
-          - python: "3.13"
+          - label: ubuntu py3.13 pyside6 cov
+            python: "3.13"
             platform: ubuntu-latest
             backend: pyside6
             coverage: cov
