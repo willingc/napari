@@ -23,6 +23,8 @@ from superqt import ensure_main_thread
 from napari._qt.containers import QtLayerList
 from napari._qt.dialogs.qt_reader_dialog import handle_gui_reading
 from napari._qt.dialogs.screenshot_dialog import ScreenshotDialog
+from napari._qt.experimental.webgpu_image_canvas import WebGPUImageCanvas
+from napari._qt.experimental.webgpu_image_layer import WebGPUImageLayerVisual
 from napari._qt.perf.qt_performance import QtPerformance
 from napari._qt.utils import QImg2array
 from napari._qt.widgets.qt_dims import QtDims
@@ -36,6 +38,7 @@ from napari.components.camera import Camera
 from napari.components.layerlist import LayerList
 from napari.errors import MultipleReaderError, ReaderPluginError
 from napari.layers.base.base import Layer
+from napari.layers.image.image import Image
 from napari.plugins import _npe2
 from napari.settings import get_settings
 from napari.settings._application import DaskSettings
@@ -206,21 +209,45 @@ class QtViewer(QSplitter):
         self._font_manager = QtFontManager()
         self._overlay_font = QGuiApplication.font().family()
 
+        settings = get_settings()
+        effective_canvas_class = canvas_class
+        if (
+            canvas_class is VispyCanvas
+            and settings.experimental.webgpu_image_display
+        ):
+            from napari._qt.experimental.webgpu_image_canvas import (
+                webgpu_image_display_available,
+            )
+
+            if webgpu_image_display_available():
+                effective_canvas_class = WebGPUImageCanvas
+            else:
+                warnings.warn(
+                    trans._(
+                        'WebGPU image display is enabled in settings but pygfx/wgpu '
+                        'are not installed. Install with pip install "napari[webgpu]". '
+                        'Falling back to VisPy.'
+                    ),
+                    stacklevel=2,
+                )
+
         # This dictionary holds the corresponding vispy visual for each layer
-        self.canvas = canvas_class(
+        self.canvas = effective_canvas_class(
             viewer=viewer,
             parent=self,
             font_manager=self._font_manager,
             font_family=self._overlay_font,
             key_map_handler=self._key_map_handler,
             size=self.viewer._canvas_size,
-            autoswap=get_settings().experimental.autoswap_buffers,  # see #5734
+            autoswap=settings.experimental.autoswap_buffers,  # see #5734
         )
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 2, 0, 2)
         main_layout.addWidget(self.dims)
+        if getattr(self.canvas, 'embed_in_qt_layout', False):
+            main_layout.addWidget(self.canvas.native, stretch=1)
         main_layout.setSpacing(0)
         main_widget.setLayout(main_layout)
 
@@ -252,7 +279,6 @@ class QtViewer(QSplitter):
         # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
-        settings = get_settings()
         self._update_dask_cache_settings(settings.application.dask)
 
         settings.application.dask.events.connect(
@@ -691,7 +717,19 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
-        vispy_layer = create_vispy_layer(layer)
+        if isinstance(self.canvas, WebGPUImageCanvas):
+            if not isinstance(layer, Image):
+                raise NotImplementedError(
+                    trans._(
+                        'WebGPU display supports Image layers only. Turn off '
+                        '"Use WebGPU for 2D image layers" in experimental settings '
+                        'or use a VisPy canvas. Got layer type: {t}',
+                        t=type(layer).__name__,
+                    )
+                )
+            vispy_layer = WebGPUImageLayerVisual(layer, self.canvas)
+        else:
+            vispy_layer = create_vispy_layer(layer)
 
         # QtPoll is experimental.
         if self._qt_poll is not None:

@@ -47,6 +47,21 @@ class ExperimentalSettings(EventedSettings):
         json_schema_extra={'requires_restart': True},
     )
 
+    webgpu_image_display: bool = Field(
+        False,
+        title=trans._('Use WebGPU for 2D image layers (experimental).'),
+        description=trans._(
+            'When enabled and napari[webgpu] is installed, 2D Image layers are '
+            'drawn with pygfx/wgpu instead of VisPy/OpenGL. Only Image layers in '
+            '2D mode are supported; other layer types are not available. Requires '
+            'restarting the viewer.'
+        ),
+        validation_alias=AliasChoices(
+            'webgpu_image_display', 'napari_webgpu_image_display'
+        ),
+        json_schema_extra={'requires_restart': True},
+    )
+
     rdp_epsilon: float = Field(
         0.5,
         title=trans._('Shapes polygon lasso and path RDP epsilon'),

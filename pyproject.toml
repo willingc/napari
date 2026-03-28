@@ -140,6 +140,10 @@ partsegcore = [
 all_optional = [
     "napari[optional,partsegcore]"
 ]
+webgpu = [
+    "pygfx>=0.15",
+    "wgpu>=0.30",
+]
 
 # the following extras need to match the dependency-groups below
 # they will be removed in napari 0.7.0
@@ -243,6 +247,10 @@ build = [
 
 # these need to be kept in sync with the equivalent optional-dependencies
 [dependency-groups]
+webgpu = [
+    "pygfx>=0.15",
+    "wgpu>=0.30",
+]
 testing = [
     "babel>=2.9.0",
     "docstring_parser>=0.15",
